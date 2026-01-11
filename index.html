@@ -353,24 +353,31 @@
                 {/* 6.5. AUTORIDADE (NOVA SEÇÃO) */}
                 <section className="py-20 bg-black border-t border-gray-800">
                     <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
-                        <div className="w-full md:w-1/2 flex gap-4">
-                            <div className="relative w-1/2">
+                        {/* COLUNA DE IMAGENS (ALTERADA PARA FICAR VERTICAL E DAR DESTAQUE AS PLACAS) */}
+                        <div className="w-full md:w-1/2 flex flex-col gap-6">
+                            <div className="relative w-full">
                                 <div className="absolute inset-0 bg-emerald-500 blur-[30px] opacity-20"></div>
+                                {/* FOTO 1: NOTEBOOK COM PLACAS (DESTAQUE TOTAL) */}
                                 <img 
                                     src="./IMG_1280.jpeg" 
-                                    alt="Especialista Samuel Vitor" 
-                                    className="relative w-full rounded-2xl border border-gray-800 shadow-2xl transition-all duration-500 h-auto"
+                                    alt="Setup com Placas de Faturamento" 
+                                    className="relative w-full rounded-lg border border-gray-800 shadow-2xl transition-all duration-500 h-auto"
+                                    style={{ objectFit: 'contain' }} 
                                 />
+                                <p className="text-center text-xs text-gray-500 mt-2">Bastidores da Operação</p>
                             </div>
-                            <div className="relative w-1/2 mt-12">
-                                <div className="absolute inset-0 bg-emerald-500 blur-[30px] opacity-20"></div>
+                            
+                            <div className="relative w-2/3 mx-auto">
+                                <div className="absolute inset-0 bg-emerald-500 blur-[30px] opacity-10"></div>
+                                {/* FOTO 2: PERFIL (MENOR, EMBAIXO) */}
                                 <img 
                                     src="./WhatsApp%20Image%202025-12-30%20at%2020.13.56.jpeg" 
                                     alt="Samuel Vitor" 
-                                    className="relative w-full rounded-2xl border border-gray-800 shadow-2xl grayscale hover:grayscale-0 transition-all duration-500 object-cover aspect-[4/5]"
+                                    className="relative w-full rounded-2xl border border-gray-800 shadow-xl grayscale hover:grayscale-0 transition-all duration-500 object-cover aspect-[4/5]"
                                 />
                             </div>
                         </div>
+
                         <div className="w-full md:w-1/2">
                             <span className="text-emerald-500 font-bold tracking-wider uppercase mb-2 block">O Especialista</span>
                             <h2 className="text-3xl md:text-4xl font-bold mb-2 text-white">Samuel Vitor</h2>
