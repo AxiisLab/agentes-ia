@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentes de IA para WhatsApp | Automação n8n</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para traduzir JSX no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'shine': 'shine 3s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        shine: {
+                            '0%': { left: '-100%' },
+                            '100%': { left: '200%' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #059669; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- ÍCONES (SVGs Inline para não precisar de biblioteca externa) ---
+        const Icon = ({ path, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
+
+        const Play = (props) => <Icon {...props} path={<polygon points="5 3 19 12 5 21 5 3"></polygon>} fill="currentColor" stroke="none"/>;
+        const CheckCircle2 = (props) => <Icon {...props} path={<><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></>} />;
+        const XCircle = (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></>} />;
+        const ArrowRight = (props) => <Icon {...props} path={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
+        const Smartphone = (props) => <Icon {...props} path={<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>} />;
+        const Brain = (props) => <Icon {...props} path={<><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></>} />;
+        const Lock = (props) => <Icon {...props} path={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />;
+        const Users = (props) => <Icon {...props} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />;
+        const Zap = (props) => <Icon {...props} path={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>} />;
+        const Clock = (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+        const ShieldCheck = (props) => <Icon {...props} path={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></>} />;
+        const Instagram = (props) => <Icon {...props} path={<><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></>} />;
+
+        // --- COMPONENTES DA PÁGINA ---
+
+        const PulseButton = ({ text, subtext, onClick }) => (
+            <button 
+                onClick={onClick}
+                className="group relative w-full md:w-auto bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-6 px-8 rounded-xl shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center mx-auto"
+            >
+                <span className="text-xl md:text-2xl uppercase tracking-wide flex items-center gap-2">
+                {text} <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </span>
+                {subtext && <span className="text-xs md:text-sm font-medium opacity-90 mt-1">{subtext}</span>}
+                
+                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/30 to-transparent transform skew-x-[-20deg] animate-shine" />
+                </div>
+            </button>
+        );
+
+        const FeatureItem = ({ children }) => (
+            <div className="flex items-start gap-3 mb-4">
+                <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 mt-1" />
+                <p className="text-gray-300 text-lg leading-relaxed">{children}</p>
+            </div>
+        );
+
+        const PersonaCard = ({ icon: IconComponent, title, description }) => (
+            <div className="bg-gray-800/50 border border-gray-700 p-6 rounded-xl hover:border-emerald-500/50 transition-colors">
+                <IconComponent className="w-10 h-10 text-emerald-400 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                <p className="text-gray-400">{description}</p>
+            </div>
+        );
+
+        // --- COMPONENTE PRINCIPAL ---
+        function LandingPage() {
+            const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+            const scrollToOffer = () => {
+                const element = document.getElementById('offer');
+                if (element) element.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            return (
+                <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-emerald-500 selection:text-white pb-10">
+                
+                {/* 1. HERO SECTION (TOPO) */}
+                <header className="relative pt-12 pb-20 px-4 md:px-6 overflow-hidden">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+                    <div className="max-w-5xl mx-auto text-center relative z-10">
+                    <div className="inline-block bg-emerald-900/30 border border-emerald-500/30 rounded-full px-4 py-1.5 mb-6 animate-fade-in-up">
+                        <span className="text-emerald-400 font-semibold text-sm tracking-wider uppercase">⚡ Automação validada para WhatsApp</span>
+                    </div>
+                    
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
+                        Pare de Perder Vendas.<br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+                        Copie Meus Agentes de IA
+                        </span> e Venda 24h.
+                    </h1>
+                    
+                    <p className="text-lg md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+                        Não é teoria. É um sistema "copia e cola" usando n8n para transformar seu WhatsApp em uma máquina de atendimento que nunca dorme, nunca reclama e vende o dia todo.
+                    </p>
+
+                    {/* VSL / Video Player Mockup */}
+                    <div className="relative w-full max-w-4xl mx-auto aspect-video bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden group cursor-pointer mb-12" onClick={() => setIsVideoPlaying(true)}>
+                        {!isVideoPlaying ? (
+                        <>
+                            {/* Thumbnail Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col items-center justify-center">
+                            <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-500 rounded-full flex items-center justify-center pl-2 shadow-[0_0_40px_rgba(16,185,129,0.6)] group-hover:scale-110 transition-transform duration-300">
+                                <Play className="w-8 h-8 md:w-10 md:h-10 text-white fill-current" />
+                            </div>
+                            <p className="mt-6 text-white font-bold text-lg uppercase tracking-widest animate-pulse">
+                                Assista à demonstração prática
+                            </p>
+                            </div>
+                            {/* Simulated Content Behind */}
+                            <div className="absolute inset-0 -z-10 opacity-40">
+                            <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1661956602116-aa6865609028?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center grayscale mix-blend-overlay"></div>
+                            <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded text-xs">08:42</div>
+                            </div>
+                        </>
+                        ) : (
+                        <div className="w-full h-full bg-black flex items-center justify-center rounded-2xl overflow-hidden relative">
+                            <iframe 
+                            src="https://player.vimeo.com/video/1153265572?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1" 
+                            frameBorder="0" 
+                            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" 
+                            referrerPolicy="strict-origin-when-cross-origin" 
+                            title="Demonstração Prática"
+                            className="absolute top-0 left-0 w-full h-full rounded-2xl"
+                            ></iframe>
+                        </div>
+                        )}
+                    </div>
+
+                    <PulseButton 
+                        text="QUERO ACESSO AOS AGENTES AGORA" 
+                        subtext="Download imediato dos templates + Tutorial" 
+                        onClick={scrollToOffer}
+                    />
+                    
+                    <p className="mt-4 text-gray-500 text-sm flex items-center justify-center gap-2">
+                        <Lock className="w-3 h-3" /> Acesso vitalício e seguro
+                    </p>
+                    </div>
+                </header>
+
+                {/* 2. SEÇÃO DE DOR (O INFERNO) */}
+                <section className="py-20 bg-gray-900 border-y border-gray-800">
+                    <div className="max-w-6xl mx-auto px-4">
+                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+                        Você é escravo do <span className="text-red-500">seu próprio WhatsApp?</span>
+                    </h2>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <div className="bg-black/40 p-8 rounded-xl border-l-4 border-red-500">
+                        <XCircle className="w-12 h-12 text-red-500 mb-6" />
+                        <h3 className="text-xl font-bold mb-3">O cliente esfria</h3>
+                        <p className="text-gray-400">Você demora 1 hora para responder. O lead já comprou do concorrente que atendeu em 2 minutos.</p>
+                        </div>
+                        <div className="bg-black/40 p-8 rounded-xl border-l-4 border-red-500">
+                        <XCircle className="w-12 h-12 text-red-500 mb-6" />
+                        <h3 className="text-xl font-bold mb-3">Cansaço Mental</h3>
+                        <p className="text-gray-400">Responder as mesmas perguntas (preço, horário, localização) 50 vezes por dia drena sua energia criativa.</p>
+                        </div>
+                        <div className="bg-black/40 p-8 rounded-xl border-l-4 border-red-500">
+                        <XCircle className="w-12 h-12 text-red-500 mb-6" />
+                        <h3 className="text-xl font-bold mb-3">Fim de Semana Perdido</h3>
+                        <p className="text-gray-400">O celular vibra no domingo à noite. Você ignora e perde dinheiro, ou atende e perde sua paz.</p>
+                        </div>
+                    </div>
+                    </div>
+                </section>
+
+                {/* 3. TRANSFORMAÇÃO (O CÉU) */}
+                <section className="py-24 px-4 bg-gradient-to-b from-gray-900 to-black relative">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="text-center mb-16">
+                            <span className="text-emerald-400 font-bold tracking-wider uppercase mb-2 block">A Nova Realidade</span>
+                            <h2 className="text-3xl md:text-5xl font-bold">Como será sua vida com Agentes de IA</h2>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-12 items-center">
+                            <div className="space-y-6">
+                                <div className="flex gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                                    <div className="bg-emerald-500/20 p-3 rounded-lg h-fit">
+                                        <Clock className="w-6 h-6 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg">Resposta Imediata (24/7)</h4>
+                                        <p className="text-gray-400 text-sm">Seu agente responde em 3 segundos, seja 2 da tarde ou 3 da manhã.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                                    <div className="bg-emerald-500/20 p-3 rounded-lg h-fit">
+                                        <Brain className="w-6 h-6 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg">Inteligência Real</h4>
+                                        <p className="text-gray-400 text-sm">Não é um chatbot burro com menu de opções. Ele entende contexto, negocia e agenda.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                                    <div className="bg-emerald-500/20 p-3 rounded-lg h-fit">
+                                        <Zap className="w-6 h-6 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg">Escala Infinita</h4>
+                                        <p className="text-gray-400 text-sm">Atenda 10, 100 ou 1.000 pessoas ao mesmo tempo sem aumentar a equipe.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Visual Representation */}
+                            <div className="relative bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-2xl rotate-1 md:rotate-2 hover:rotate-0 transition-transform duration-500">
+                                <div className="absolute -top-4 -right-4 bg-emerald-500 text-black font-bold px-4 py-2 rounded-lg transform rotate-6 shadow-lg">
+                                    Venda realizada! 💰
+                                </div>
+                                <div className="space-y-4 font-mono text-sm">
+                                    <div className="flex gap-3">
+                                        <div className="bg-gray-700 w-8 h-8 rounded-full shrink-0"></div>
+                                        <div className="bg-gray-700 p-3 rounded-r-xl rounded-bl-xl max-w-[80%]">
+                                            <p className="text-gray-300">Olá, gostaria de saber o valor e como funciona.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 flex-row-reverse">
+                                        <div className="bg-emerald-600 w-8 h-8 rounded-full shrink-0 flex items-center justify-center"><Zap className="w-4 h-4 text-white"/></div>
+                                        <div className="bg-emerald-900/50 border border-emerald-500/30 p-3 rounded-l-xl rounded-br-xl max-w-[90%]">
+                                            <p className="text-white">Olá! Claro. O nosso sistema funciona por automação via n8n. O investimento hoje é de R$19,70 com acesso vitalício. Posso te enviar o link seguro?</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <div className="bg-gray-700 w-8 h-8 rounded-full shrink-0"></div>
+                                        <div className="bg-gray-700 p-3 rounded-r-xl rounded-bl-xl max-w-[80%]">
+                                            <p className="text-gray-300">Pode sim, por favor!</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 flex-row-reverse">
+                                        <div className="bg-emerald-600 w-8 h-8 rounded-full shrink-0 flex items-center justify-center"><Zap className="w-4 h-4 text-white"/></div>
+                                        <div className="bg-emerald-900/50 border border-emerald-500/30 p-3 rounded-l-xl rounded-br-xl max-w-[90%]">
+                                            <p className="text-white">Aqui está: [LINK]. Assim que confirmar, já libero seu acesso imediato! 🚀</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 4. O QUE O CLIENTE RECEBE (ENTREGÁVEIS) */}
+                <section className="py-20 bg-gray-900 border-t border-gray-800">
+                    <div className="max-w-4xl mx-auto px-4">
+                        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">O Kit Completo de Automação</h2>
+                        
+                        <div className="bg-black border border-gray-800 rounded-2xl overflow-hidden">
+                            <div className="p-8 border-b border-gray-800 hover:bg-gray-900/50 transition-colors">
+                                <h3 className="text-2xl font-bold text-emerald-400 mb-2">01. Templates de Fluxos Prontos (JSON)</h3>
+                                <p className="text-gray-400">Arquivos prontos para importar no n8n. Fluxo de agendamento, fluxo de vendas, fluxo de suporte e triagem.</p>
+                            </div>
+                            <div className="p-8 border-b border-gray-800 hover:bg-gray-900/50 transition-colors">
+                                <h3 className="text-2xl font-bold text-emerald-400 mb-2">02. Configuração da "Cérebro" da IA</h3>
+                                <p className="text-gray-400">O prompt exato do sistema (System Prompt) que faz a IA agir como um humano persuasivo e não como um robô genérico.</p>
+                            </div>
+                            <div className="p-8 border-b border-gray-800 hover:bg-gray-900/50 transition-colors">
+                                <h3 className="text-2xl font-bold text-emerald-400 mb-2">03. Tutorial "Zero ao Play"</h3>
+                                <p className="text-gray-400">Vídeos curtos e diretos mostrando onde clicar. Criação de conta, conexão com WhatsApp e ativação.</p>
+                            </div>
+                            <div className="p-8 hover:bg-gray-900/50 transition-colors">
+                                <h3 className="text-2xl font-bold text-emerald-400 mb-2">04. Manual Anti-Bloqueio</h3>
+                                <p className="text-gray-400">Boas práticas essenciais para manter seu número seguro enquanto automatiza.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 5. POR QUE FUNCIONA (LÓGICA) */}
+                <section className="py-20 px-4 bg-black">
+                    <div className="max-w-4xl mx-auto text-center">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-8">Por que usar n8n e não ferramentas caras?</h2>
+                        <div className="grid md:grid-cols-3 gap-6 text-left">
+                            <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
+                                <h4 className="font-bold text-white mb-2 text-lg">Sem Mensalidades Altas</h4>
+                                <p className="text-sm text-gray-400">Diferente de SaaS que cobram R$500/mês, aqui você é dono da estrutura.</p>
+                            </div>
+                            <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
+                                <h4 className="font-bold text-white mb-2 text-lg">Controle Total</h4>
+                                <p className="text-sm text-gray-400">Modifique o comportamento do agente quando quiser. Você tem a liberdade.</p>
+                            </div>
+                            <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
+                                <h4 className="font-bold text-white mb-2 text-lg">Integração Universal</h4>
+                                <p className="text-sm text-gray-400">Conecte com seu CRM, Planilha Google ou Gateway de pagamento facilmente.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 6. PARA QUEM É */}
+                <section className="py-20 bg-gray-900 border-y border-gray-800">
+                    <div className="max-w-6xl mx-auto px-4">
+                        <h2 className="text-3xl font-bold text-center mb-12">Isso é para você?</h2>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <PersonaCard icon={Smartphone} title="Donos de Negócio" description="Que querem automatizar o atendimento e focar na gestão." />
+                            <PersonaCard icon={Users} title="Agências" description="Que querem vender automação como serviço (High Ticket)." />
+                            <PersonaCard icon={Zap} title="Infoprodutores" description="Para recuperar carrinhos e tirar dúvidas de alunos." />
+                            <PersonaCard icon={ShieldCheck} title="Freelancers" description="Que querem se diferenciar entregando tecnologia de ponta." />
+                        </div>
+                        
+                        <div className="mt-12 p-6 bg-red-900/20 border border-red-900/50 rounded-xl text-center max-w-2xl mx-auto">
+                            <p className="text-red-300 font-bold">❌ PARA QUEM NÃO É:</p>
+                            <p className="text-red-200/70 text-sm mt-2">Pessoas que procuram "dinheiro fácil" sem implementar nada ou que têm preguiça de assistir tutoriais práticos.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 6.5. AUTORIDADE (NOVA SEÇÃO) */}
+                <section className="py-20 bg-black border-t border-gray-800">
+                    <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
+                        <div className="w-full md:w-1/2 flex gap-4">
+                            <div className="relative w-1/2">
+                                <div className="absolute inset-0 bg-emerald-500 blur-[30px] opacity-20"></div>
+                                <img 
+                                    src="./IMG_1280.jpeg" 
+                                    alt="Especialista Samuel Vitor" 
+                                    className="relative w-full rounded-2xl border border-gray-800 shadow-2xl grayscale hover:grayscale-0 transition-all duration-500 object-cover aspect-[4/5]"
+                                />
+                            </div>
+                            <div className="relative w-1/2 mt-12">
+                                <div className="absolute inset-0 bg-emerald-500 blur-[30px] opacity-20"></div>
+                                <img 
+                                    src="./WhatsApp%20Image%202025-12-30%20at%2020.13.56.jpeg" 
+                                    alt="Samuel Vitor" 
+                                    className="relative w-full rounded-2xl border border-gray-800 shadow-2xl grayscale hover:grayscale-0 transition-all duration-500 object-cover aspect-[4/5]"
+                                />
+                            </div>
+                        </div>
+                        <div className="w-full md:w-1/2">
+                            <span className="text-emerald-500 font-bold tracking-wider uppercase mb-2 block">O Especialista</span>
+                            <h2 className="text-3xl md:text-4xl font-bold mb-2 text-white">Samuel Vitor</h2>
+                            <a href="https://instagram.com/samuel.vitorr_" target="_blank" className="flex items-center gap-2 text-emerald-400 mb-6 hover:text-emerald-300 transition-colors w-fit">
+                                <Instagram className="w-5 h-5" />
+                                <span className="font-semibold">@samuel.vitorr_</span>
+                            </a>
+                            
+                            <h3 className="text-xl font-bold mb-4 text-gray-200">Quem vai te guiar nessa jornada?</h3>
+                            <p className="text-gray-400 text-lg mb-6 leading-relaxed">
+                                Desenvolvi esse método após validar dezenas de operações de vendas no WhatsApp. Não sou apenas um "vendedor de curso", sou um estrategista que vive o campo de batalha.
+                            </p>
+                            <p className="text-gray-400 text-lg mb-6 leading-relaxed">
+                                Essa imagem representa a seriedade e o nível de entrega que você vai encontrar. Sem hacks, sem bloqueios, apenas engenharia de vendas aplicada.
+                            </p>
+                            <div className="flex gap-4">
+                                <div className="bg-gray-900 px-4 py-2 rounded-lg border border-gray-800">
+                                    <span className="block text-2xl font-bold text-white">+10k</span>
+                                    <span className="text-xs text-gray-500">Alunos</span>
+                                </div>
+                                <div className="bg-gray-900 px-4 py-2 rounded-lg border border-gray-800">
+                                    <span className="block text-2xl font-bold text-white">R$ 5M+</span>
+                                    <span className="text-xs text-gray-500">Gerados</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 7. OFERTA (CTA FINAL) */}
+                <section id="offer" className="py-24 px-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-black pointer-events-none"></div>
+                    
+                    <div className="max-w-md mx-auto relative z-10">
+                        <div className="bg-gray-800 border border-emerald-500 rounded-3xl p-8 shadow-[0_0_50px_rgba(16,185,129,0.2)] text-center transform hover:scale-[1.02] transition-transform duration-300">
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-black font-bold px-6 py-1 rounded-full text-sm uppercase tracking-wider">
+                                Oferta por Tempo Limitado
+                            </div>
+
+                            <h3 className="text-3xl font-bold text-white mb-2">Pack Agentes IA WhatsApp</h3>
+                            <p className="text-gray-400 mb-6">Tudo o que você precisa para automatizar hoje.</p>
+
+                            <div className="flex justify-center items-end gap-2 mb-8">
+                                <span className="text-gray-500 text-lg line-through mb-2">R$ 97,00</span>
+                                <span className="text-5xl font-extrabold text-white">R$ 19</span>
+                                <span className="text-gray-400 font-medium mb-2">,70</span>
+                            </div>
+
+                            <div className="space-y-4 text-left mb-8">
+                                <FeatureItem>Templates Prontos (JSON)</FeatureItem>
+                                <FeatureItem>Tutorial de Implementação</FeatureItem>
+                                <FeatureItem>Prompt de Personalidade</FeatureItem>
+                                <FeatureItem>Acesso Vitalício</FeatureItem>
+                                <FeatureItem>Garantia de 7 Dias</FeatureItem>
+                            </div>
+
+                            <a 
+                                href="https://go.ironpayapp.com.br/w2jn5wc5dx"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 rounded-xl text-xl shadow-lg transition-all active:scale-95 mb-4"
+                            >
+                                COMPRAR AGORA
+                            </a>
+                            
+                            <div className="flex items-center justify-center gap-4 opacity-60 grayscale hover:grayscale-0 transition-all">
+                                <div className="flex gap-1">
+                                    <div className="w-8 h-5 bg-gray-600 rounded"></div>
+                                    <div className="w-8 h-5 bg-gray-600 rounded"></div>
+                                    <div className="w-8 h-5 bg-gray-600 rounded"></div>
+                                </div>
+                                <span className="text-xs text-gray-400">Pagamento Seguro</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <footer className="py-12 bg-black text-center text-gray-600 border-t border-gray-900 text-sm">
+                    <div className="max-w-4xl mx-auto px-4">
+                        <p className="mb-4">Este produto não garante a obtenção de resultados. Qualquer referência ao desempenho de uma estratégia não deve ser interpretada como uma garantia de resultados.</p>
+                        <p>&copy; {new Date().getFullYear()} Automação IA. Todos os direitos reservados.</p>
+                        <div className="flex justify-center gap-6 mt-6">
+                            <a href="#" className="hover:text-emerald-500">Termos de Uso</a>
+                            <a href="#" className="hover:text-emerald-500">Política de Privacidade</a>
+                            <a href="#" className="hover:text-emerald-500">Contato</a>
+                        </div>
+                    </div>
+                </footer>
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<LandingPage />);
+    </script>
+</body>
+</html>
