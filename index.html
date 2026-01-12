@@ -48,22 +48,22 @@
     </style>
 
     <!-- Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '731922199976019');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=731922199976019&ev=PageView&noscript=1"
-/></noscript>
-<!-- End Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '731922199976019');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=731922199976019&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
 </head>
 <body>
     <div id="root"></div>
@@ -131,6 +131,19 @@ src="https://www.facebook.com/tr?id=731922199976019&ev=PageView&noscript=1"
             const scrollToOffer = () => {
                 const element = document.getElementById('offer');
                 if (element) element.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            // Função para disparar o InitiateCheckout
+            const handleCheckoutClick = () => {
+                if (typeof fbq !== 'undefined') {
+                    fbq('track', 'InitiateCheckout', {
+                        value: 19.70,
+                        currency: 'BRL',
+                        content_name: 'Pack Agentes IA WhatsApp',
+                        num_items: 1
+                    });
+                    console.log("Pixel Disparado: InitiateCheckout");
+                }
             };
 
             return (
@@ -456,6 +469,7 @@ src="https://www.facebook.com/tr?id=731922199976019&ev=PageView&noscript=1"
                                 href="https://go.ironpayapp.com.br/w2jn5wc5dx"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={handleCheckoutClick}
                                 className="block w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 rounded-xl text-xl shadow-lg transition-all active:scale-95 mb-4"
                             >
                                 COMPRAR AGORA
@@ -494,5 +508,4 @@ src="https://www.facebook.com/tr?id=731922199976019&ev=PageView&noscript=1"
     </script>
 </body>
 </html>
-
 
